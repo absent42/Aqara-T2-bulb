@@ -14,7 +14,7 @@ Notes:
 
   • This converter mimics the dynamic RGB effect creation and preview feature of the Aqara Home app.
   
-  • The dynamic RGB effects are not written as scenes to the bulb's memory as they are in the Aqara app. That process is done via OTA firmware writes which are not implemented here.
+  • The dynamic RGB effects are not written as scenes to the bulb's memory as they are when using the Aqara app. That process is done via OTA firmware writes which are not implemented here.
   
   • Activating such saved effect scenes as well as the bulb's built in scenes appears to have some sort of vendor lock. Possibly the bulb is checking if the Zigbee commands are coming from an Aqara hub and won't activate them if the source IEEE address doesn't match.
   
