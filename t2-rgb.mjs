@@ -272,6 +272,15 @@ export default {
 
                         const attrId = 0x0527;
 
+                        // Check on/off state
+                        const shouldTurnOn = effect !== "off" && meta.state.state === "OFF";
+
+                        if (shouldTurnOn) {
+                            await entity.command("genOnOff", "on", {}, {});
+                            // Safety delay
+                            await new Promise((resolve) => setTimeout(resolve, 100));
+                        }
+
                         // Encode all colours using RGB to XY conversion
                         const colorBytes = [];
                         colorList.forEach((color) => {
@@ -338,14 +347,18 @@ export default {
                             },
                         );
 
-                        return {
-                            state: {
-                                rgb_effect_colors: colors,
-                                rgb_effect: effect,
-                                rgb_effect_brightness: brightnessPercent,
-                                rgb_effect_speed: speed,
-                            },
+                        const stateUpdate = {
+                            rgb_effect_colors: colors,
+                            rgb_effect: effect,
+                            rgb_effect_brightness: brightnessPercent,
+                            rgb_effect_speed: speed,
                         };
+
+                        if (shouldTurnOn) {
+                            stateUpdate.state = "ON";
+                        }
+
+                        return {state: stateUpdate};
                     },
                 },
             ],
