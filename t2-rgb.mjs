@@ -7,13 +7,36 @@ const {manufacturerCode} = lumi;
 const ea = exposes.access;
 
 // RGB Dynamic Effect definitions
-const RGB_EFFECTS = {
+const T2_RGB_EFFECTS = {
     off: 0,
     breathing: 1,
     candlelight: 2,
     fading: 3,
     flash: 4,
 };
+
+// Build RGB dynamic effect messages
+function buildRGBEffectMessages(colorList, brightness8bit, effectId, speed) {
+    // Encode all colors
+    const colorBytes = [];
+    for (const color of colorList) {
+        const encoded = encodeColor(color);
+        colorBytes.push(...encoded);
+    }
+
+    // Message 1: Colors (0x03)
+    const msg1Length = 3 + colorList.length * 4;
+    const msg1 = Buffer.from([0x01, 0x01, 0x03, msg1Length, brightness8bit, 0x00, colorList.length, ...colorBytes]);
+
+    // Message 2: Effect Type (0x04)
+    // Format is identical for T1M and T2
+    const msg2 = Buffer.from([0x01, 0x01, 0x04, 0x0c, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, effectId]);
+
+    // Message 3: Speed (0x05)
+    const msg3 = Buffer.from([0x01, 0x01, 0x05, 0x01, speed]);
+
+    return {msg1, msg2, msg3};
+}
 
 // Convert RGB to XY
 function rgbToXY(r, g, b) {
@@ -63,14 +86,12 @@ function encodeColor(hexColor) {
     const yScaled = Math.round(xy.y * 65535);
 
     // Pack into 4 bytes (big endian): [x_high, x_low, y_high, y_low]
-    const bytes = [
+    return [
         (xScaled >>> 8) & 0xff, // x_high
         xScaled & 0xff, // x_low
         (yScaled >>> 8) & 0xff, // y_high
         yScaled & 0xff, // y_low
     ];
-
-    return bytes;
 }
 
 export default {
@@ -199,7 +220,7 @@ export default {
         {
             isModernExtend: true,
             exposes: [
-                exposes.enum("rgb_effect", ea.SET, Object.keys(RGB_EFFECTS)).withDescription("RGB dynamic effect type").withCategory("config"),
+                exposes.enum("rgb_effect", ea.SET, Object.keys(T2_RGB_EFFECTS)).withDescription("RGB dynamic effect type").withCategory("config"),
                 exposes
                     .text("rgb_effect_colors", ea.SET)
                     .withDescription("Comma-separated RGB hex colors (e.g., #FF0000,#00FF00,#0000FF). 1-8 colors")
@@ -247,9 +268,9 @@ export default {
                         const brightnessPercent = key === "rgb_effect_brightness" ? value : meta.state.rgb_effect_brightness || 100;
                         const speed = key === "rgb_effect_speed" ? value : meta.state.rgb_effect_speed || 50;
 
-                        const effectId = RGB_EFFECTS[effect];
+                        const effectId = T2_RGB_EFFECTS[effect];
                         if (effectId === undefined) {
-                            throw new Error(`Unknown effect: ${effect}. Supported: ${Object.keys(RGB_EFFECTS).join(", ")}`);
+                            throw new Error(`Unknown effect: ${effect}. Supported: ${Object.keys(T2_RGB_EFFECTS).join(", ")}`);
                         }
 
                         // Parse colours
@@ -259,8 +280,8 @@ export default {
                             throw new Error("Must provide 1-8 colors");
                         }
 
-                        // Validate percentage range
                         if (brightnessPercent < 1 || brightnessPercent > 100) {
+                            // Validate percentage range
                             throw new Error("Brightness must be between 1 and 100%");
                         }
                         if (speed < 1 || speed > 100) {
@@ -270,7 +291,7 @@ export default {
                         // Convert brightness percentage to 8-bit value
                         const brightness8bit = Math.round((brightnessPercent / 100) * 254);
 
-                        const attrId = 0x0527;
+                        const ATTR_RGB_EFFECT = 0x0527;
 
                         // Check on/off state
                         const shouldTurnOn = effect !== "off" && meta.state.state === "OFF";
@@ -281,70 +302,30 @@ export default {
                             await new Promise((resolve) => setTimeout(resolve, 100));
                         }
 
-                        // Encode all colours using RGB to XY conversion
-                        const colorBytes = [];
-                        colorList.forEach((color) => {
-                            const encoded = encodeColor(color);
-                            colorBytes.push(...encoded);
-                        });
+                       // Build the three messages using shared function
+                        const {msg1, msg2, msg3} = buildRGBEffectMessages(colorList, brightness8bit, effectId, speed);
 
+                        // Send Message 1: Colors
                         await new Promise((resolve) => setTimeout(resolve, 200));
-
-                        // Message 1: Attribute 0x03 - Colours
-                        const msg1Length = 3 + colorList.length * 4;
-
-                        const msg1 = [0x01, 0x01, 0x03, msg1Length, brightness8bit, 0x00, colorList.length, ...colorBytes];
-
                         await entity.write(
                             "manuSpecificLumi",
-                            {[attrId]: {value: Buffer.from(msg1), type: 0x41}},
-                            {
-                                manufacturerCode,
-                                disableDefaultResponse: false,
-                            },
+                            {[ATTR_RGB_EFFECT]: {value: msg1, type: 0x41}},
+                            {manufacturerCode, disableDefaultResponse: false},
                         );
 
-                        // Message 2: Attribute 0x04 - Effect Type
-                        const msg2 = Buffer.from([
-                            0x01,
-                            0x01,
-                            0x04,
-                            0x0c,
-                            0xff,
-                            0xff,
-                            0xff,
-                            0xff,
-                            0xff,
-                            0xff,
-                            0xff,
-                            0xff,
-                            0x00,
-                            0x00,
-                            0x00,
-                            effectId,
-                        ]);
-
+                        // Send Message 2: Effect Type
                         await entity.write(
                             "manuSpecificLumi",
-                            {[attrId]: {value: msg2, type: 0x41}},
-                            {
-                                manufacturerCode,
-                                disableDefaultResponse: false,
-                            },
+                            {[ATTR_RGB_EFFECT]: {value: msg2, type: 0x41}},
+                            {manufacturerCode, disableDefaultResponse: false},
                         );
 
+                        // Send Message 3: Speed
                         await new Promise((resolve) => setTimeout(resolve, 200));
-
-                        // Message 3: Attribute 0x05 - Speed
-                        const msg3 = Buffer.from([0x01, 0x01, 0x05, 0x01, speed]);
-
                         await entity.write(
                             "manuSpecificLumi",
-                            {[attrId]: {value: msg3, type: 0x41}},
-                            {
-                                manufacturerCode,
-                                disableDefaultResponse: false,
-                            },
+                            {[ATTR_RGB_EFFECT]: {value: msg3, type: 0x41}},
+                            {manufacturerCode, disableDefaultResponse: false},
                         );
 
                         const stateUpdate = {
