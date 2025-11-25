@@ -1,19 +1,10 @@
 import * as exposes from "zigbee-herdsman-converters/lib/exposes";
 import * as lumi from "zigbee-herdsman-converters/lib/lumi";
-import * as modernExtend from "zigbee-herdsman-converters/lib/modernExtend";
+import * as m from "zigbee-herdsman-converters/lib/modernExtend";
 import "zigbee-herdsman-converters/lib/types";
 
 const {manufacturerCode} = lumi;
 const ea = exposes.access;
-
-// RGB Dynamic Effect definitions
-const T2_RGB_EFFECTS = {
-    off: 0,
-    breathing: 1,
-    candlelight: 2,
-    fading: 3,
-    flash: 4,
-};
 
 // Build RGB dynamic effect messages
 function buildRGBEffectMessages(colorList, brightness8bit, effectId, speed) {
@@ -129,12 +120,12 @@ export default {
             colorTempRange: [111, 500],
         }),
 
-        modernExtend.identify(),
+        m.identify(),
         lumi.lumiModernExtend.lumiPowerOnBehavior({lookup: {off: 0, on: 1, reverse: 2, restore: 3}}),
-        modernExtend.forcePowerSource({powerSource: "Mains (single phase)"}),
+        m.forcePowerSource({powerSource: "Mains (single phase)"}),
         lumi.lumiModernExtend.lumiZigbeeOTA(),
 
-        modernExtend.numeric({
+        m.numeric({
             name: "transition_curve_curvature",
             label: "Transition Curve Curvature",
             cluster: "manuSpecificLumi",
@@ -147,7 +138,7 @@ export default {
             valueStep: 0.01,
         }),
 
-        modernExtend.numeric({
+        m.numeric({
             name: "transition_initial_brightness",
             label: "Initial Brightness",
             cluster: "manuSpecificLumi",
@@ -161,7 +152,7 @@ export default {
             valueStep: 1,
         }),
 
-        modernExtend.numeric({
+        m.numeric({
             name: "off_on_duration",
             label: "Off to On dimming duration",
             cluster: "genLevelCtrl",
@@ -175,7 +166,7 @@ export default {
             scale: 10,
         }),
 
-        modernExtend.numeric({
+        m.numeric({
             name: "on_off_duration",
             label: "On to Off dimming duration",
             cluster: "genLevelCtrl",
@@ -189,7 +180,7 @@ export default {
             scale: 10,
         }),
 
-        modernExtend.numeric({
+        m.numeric({
             name: "dimming_range_minimum",
             label: "Dimming Range Minimum",
             cluster: "manuSpecificLumi",
@@ -203,7 +194,7 @@ export default {
             valueStep: 1,
         }),
 
-        modernExtend.numeric({
+        m.numeric({
             name: "dimming_range_maximum",
             label: "Dimming Range Maximum",
             cluster: "manuSpecificLumi",
@@ -217,132 +208,118 @@ export default {
             valueStep: 1,
         }),
 
+        // RGB Effect Type - T2 specific mappings
+        m.enumLookup({
+            name: "rgb_effect",
+            lookup: {off: 0, breathing: 1, candlelight: 2, fading: 3, flash: 4},
+            cluster: "manuSpecificLumi",
+            attribute: {ID: 0x051f, type: 0x23},
+            description: "RGB dynamic effect type for ring light",
+            zigbeeCommandOptions: {manufacturerCode},
+        }),
+
+        // RGB Effect Speed
+        m.numeric({
+            name: "rgb_effect_speed",
+            cluster: "manuSpecificLumi",
+            attribute: {ID: 0x0520, type: 0x20},
+            description: "RGB dynamic effect speed (1-100%)",
+            zigbeeCommandOptions: {manufacturerCode},
+            unit: "%",
+            valueMin: 1,
+            valueMax: 100,
+            valueStep: 1,
+        }),
+
+    ],
+
+    meta: {},
+
+    exposes: [
+        // RGB dynamic effects
+        exposes
+            .text("rgb_effect_colors", ea.SET)
+            .withDescription("Comma-separated RGB hex colors (e.g., #FF0000,#00FF00,#0000FF). 1-8 colors")
+            .withCategory("config"),
+        exposes
+            .numeric("rgb_effect_brightness", ea.SET)
+            .withValueMin(1)
+            .withValueMax(100)
+            .withValueStep(1)
+            .withUnit("%")
+            .withDescription("RGB dynamic effect brightness (1-100%)")
+            .withCategory("config"),
+    ],
+
+    toZigbee: [
         {
-            isModernExtend: true,
-            exposes: [
-                exposes.enum("rgb_effect", ea.SET, Object.keys(T2_RGB_EFFECTS)).withDescription("RGB dynamic effect type").withCategory("config"),
-                exposes
-                    .text("rgb_effect_colors", ea.SET)
-                    .withDescription("Comma-separated RGB hex colors (e.g., #FF0000,#00FF00,#0000FF). 1-8 colors")
-                    .withCategory("config"),
-                exposes
-                    .numeric("rgb_effect_brightness", ea.SET)
-                    .withValueMin(1)
-                    .withValueMax(100)
-                    .withValueStep(1)
-                    .withUnit("%")
-                    .withDescription("RGB dynamic effect brightness (1-100%)")
-                    .withCategory("config"),
-                exposes
-                    .numeric("rgb_effect_speed", ea.SET)
-                    .withValueMin(1)
-                    .withValueMax(100)
-                    .withUnit("%")
-                    .withDescription("RGB dynamic effect speed (1-100%)")
-                    .withCategory("config"),
-            ],
+            key: ["rgb_effect_colors", "rgb_effect_brightness"],
+            convertSet: async (entity, key, value, meta) => {
+                // Read from incoming message first (allows single MQTT payload with all params),
+                // then fall back to state, then to defaults
+                const colors = meta.message.rgb_effect_colors || meta.state.rgb_effect_colors || "#FF0000,#00FF00,#0000FF";
+                const brightnessPercent = meta.message.rgb_effect_brightness ?? meta.state.rgb_effect_brightness ?? 100;
 
-            toZigbee: [
-                {
-                    key: ["dimming_range_minimum", "dimming_range_maximum"],
-                    convertSet: async (entity, key, value, meta) => {
-                        const newMin = key === "dimming_range_minimum" ? value : meta.state.dimming_range_minimum;
-                        const newMax = key === "dimming_range_maximum" ? value : meta.state.dimming_range_maximum;
+                // Parse colors
+                const colorList = colors.split(",").map((c) => c.trim());
 
-                        if (newMin !== undefined && newMax !== undefined && newMin > newMax) {
-                            throw new Error(`Minimum (${newMin}%) cannot exceed maximum (${newMax}%)`);
-                        }
+                if (colorList.length < 1 || colorList.length > 8) {
+                    throw new Error("Must provide 1-8 colors");
+                }
 
-                        const attrId = key === "dimming_range_minimum" ? 0x0515 : 0x0516;
-                        await entity.write("manuSpecificLumi", {[attrId]: {value, type: 0x20}}, {manufacturerCode});
+                if (brightnessPercent < 1 || brightnessPercent > 100) {
+                    throw new Error("Brightness must be between 1 and 100%");
+                }
 
-                        return {state: {[key]: value}};
+                // Convert brightness percentage to 8-bit value (0-254)
+                const brightness8bit = Math.round((brightnessPercent / 100) * 254);
+
+                // Encode all colors for the color message
+                const colorBytes = [];
+                for (const color of colorList) {
+                    const encoded = encodeColor(color);
+                    colorBytes.push(...encoded);
+                }
+
+                // Build color message (0x03 prefix) - sent to 0x0527
+                const msg1Length = 3 + colorList.length * 4;
+                const msg1 = Buffer.from([0x01, 0x01, 0x03, msg1Length, brightness8bit, 0x00, colorList.length, ...colorBytes]);
+
+                const ATTR_RGB_COLORS = 0x0527;
+
+                // Send colors to 0x0527
+                await entity.write(
+                    "manuSpecificLumi",
+                    {[ATTR_RGB_COLORS]: {value: msg1, type: 0x41}},
+                    {manufacturerCode, disableDefaultResponse: false},
+                );
+
+                // Update state - ring light turns on when effects are activated
+                return {
+                    state: {
+                        rgb_effect_colors: colors,
+                        rgb_effect_brightness: brightnessPercent,
+                        state: "ON",
                     },
-                },
-                {
-                    key: ["rgb_effect", "rgb_effect_colors", "rgb_effect_brightness", "rgb_effect_speed"],
-                    convertSet: async (entity, key, value, meta) => {
-                        // Read all values from meta.state with defaults
-                        const effect = key === "rgb_effect" ? value : meta.state.rgb_effect || "off";
-                        const colors = key === "rgb_effect_colors" ? value : meta.state.rgb_effect_colors || "#FF0000,#00FF00,#0000FF";
-                        const brightnessPercent = key === "rgb_effect_brightness" ? value : meta.state.rgb_effect_brightness || 100;
-                        const speed = key === "rgb_effect_speed" ? value : meta.state.rgb_effect_speed || 50;
+                };
+            },
+        },
+        {
+            key: ["dimming_range_minimum", "dimming_range_maximum"],
+            convertSet: async (entity, key, value, meta) => {
+                // Validate that min doesn't exceed max
+                const newMin = key === "dimming_range_minimum" ? value : meta.state.dimming_range_minimum;
+                const newMax = key === "dimming_range_maximum" ? value : meta.state.dimming_range_maximum;
 
-                        const effectId = T2_RGB_EFFECTS[effect];
-                        if (effectId === undefined) {
-                            throw new Error(`Unknown effect: ${effect}. Supported: ${Object.keys(T2_RGB_EFFECTS).join(", ")}`);
-                        }
+                if (newMin !== undefined && newMax !== undefined && newMin > newMax) {
+                    throw new Error(`Minimum (${newMin}%) cannot exceed maximum (${newMax}%)`);
+                }
 
-                        // Parse colours
-                        const colorList = colors.split(",").map((c) => c.trim());
+                const attrId = key === "dimming_range_minimum" ? 0x0515 : 0x0516;
+                await entity.write("manuSpecificLumi", {[attrId]: {value, type: 0x20}}, {manufacturerCode});
 
-                        if (colorList.length < 1 || colorList.length > 8) {
-                            throw new Error("Must provide 1-8 colors");
-                        }
-
-                        if (brightnessPercent < 1 || brightnessPercent > 100) {
-                            // Validate percentage range
-                            throw new Error("Brightness must be between 1 and 100%");
-                        }
-                        if (speed < 1 || speed > 100) {
-                            throw new Error("Speed must be between 1 and 100%");
-                        }
-
-                        // Convert brightness percentage to 8-bit value
-                        const brightness8bit = Math.round((brightnessPercent / 100) * 254);
-
-                        const ATTR_RGB_EFFECT = 0x0527;
-
-                        // Check on/off state
-                        const shouldTurnOn = effect !== "off" && meta.state.state === "OFF";
-
-                        if (shouldTurnOn) {
-                            await entity.command("genOnOff", "on", {}, {});
-                            // Safety delay
-                            await new Promise((resolve) => setTimeout(resolve, 100));
-                        }
-
-                       // Build the three messages using shared function
-                        const {msg1, msg2, msg3} = buildRGBEffectMessages(colorList, brightness8bit, effectId, speed);
-
-                        // Send Message 1: Colors
-                        await new Promise((resolve) => setTimeout(resolve, 200));
-                        await entity.write(
-                            "manuSpecificLumi",
-                            {[ATTR_RGB_EFFECT]: {value: msg1, type: 0x41}},
-                            {manufacturerCode, disableDefaultResponse: false},
-                        );
-
-                        // Send Message 2: Effect Type
-                        await entity.write(
-                            "manuSpecificLumi",
-                            {[ATTR_RGB_EFFECT]: {value: msg2, type: 0x41}},
-                            {manufacturerCode, disableDefaultResponse: false},
-                        );
-
-                        // Send Message 3: Speed
-                        await new Promise((resolve) => setTimeout(resolve, 200));
-                        await entity.write(
-                            "manuSpecificLumi",
-                            {[ATTR_RGB_EFFECT]: {value: msg3, type: 0x41}},
-                            {manufacturerCode, disableDefaultResponse: false},
-                        );
-
-                        const stateUpdate = {
-                            rgb_effect_colors: colors,
-                            rgb_effect: effect,
-                            rgb_effect_brightness: brightnessPercent,
-                            rgb_effect_speed: speed,
-                        };
-
-                        if (shouldTurnOn) {
-                            stateUpdate.state = "ON";
-                        }
-
-                        return {state: stateUpdate};
-                    },
-                },
-            ],
+                return {state: {[key]: value}};
+            },
         },
     ],
 };
