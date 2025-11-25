@@ -6,29 +6,6 @@ import "zigbee-herdsman-converters/lib/types";
 const {manufacturerCode} = lumi;
 const ea = exposes.access;
 
-// Build RGB dynamic effect messages
-function buildRGBEffectMessages(colorList, brightness8bit, effectId, speed) {
-    // Encode all colors
-    const colorBytes = [];
-    for (const color of colorList) {
-        const encoded = encodeColor(color);
-        colorBytes.push(...encoded);
-    }
-
-    // Message 1: Colors (0x03)
-    const msg1Length = 3 + colorList.length * 4;
-    const msg1 = Buffer.from([0x01, 0x01, 0x03, msg1Length, brightness8bit, 0x00, colorList.length, ...colorBytes]);
-
-    // Message 2: Effect Type (0x04)
-    // Format is identical for T1M and T2
-    const msg2 = Buffer.from([0x01, 0x01, 0x04, 0x0c, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, effectId]);
-
-    // Message 3: Speed (0x05)
-    const msg3 = Buffer.from([0x01, 0x01, 0x05, 0x01, speed]);
-
-    return {msg1, msg2, msg3};
-}
-
 // Convert RGB to XY
 function rgbToXY(r, g, b) {
     // Normalize RGB to 0-1
