@@ -1,6 +1,8 @@
 # Aqara-T2-bulb
 Zigbee2MQTT external converter with Dynamic RGB Effects for the Aqara T2 RGB bulb. 
 
+*Requires Zigbee2MQTT 2.6.4*
+
 Dynamic RGB Effects have the following properties:
 
 1. Effect Type: Breathing, Candlelight, Fading, Flash. 
