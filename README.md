@@ -1,7 +1,7 @@
 # Aqara-T2-bulb
 Zigbee2MQTT external converter with Dynamic RGB Effects for the Aqara T2 RGB bulb. 
 
-*Requires Zigbee2MQTT 2.6.4*
+*Requires Zigbee2MQTT 2.7.0 or above* 
 
 Dynamic RGB Effects have the following properties:
 
