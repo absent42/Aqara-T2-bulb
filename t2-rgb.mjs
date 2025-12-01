@@ -3,7 +3,7 @@ import * as lumi from "zigbee-herdsman-converters/lib/lumi";
 import * as m from "zigbee-herdsman-converters/lib/modernExtend";
 import "zigbee-herdsman-converters/lib/types";
 
-const {manufacturerCode} = lumi;
+const {lumiModernExtend, manufacturerCode} = lumi;
 const ea = exposes.access;
 
 // Convert RGB to XY
@@ -84,106 +84,32 @@ export default {
 
     configure: async (device, coordinatorEndpoint) => {
         const endpoint = device.getEndpoint(1);
-        await endpoint.read("manuSpecificLumi", [0x0528], {manufacturerCode: manufacturerCode}); // Read transition_curve_curvature
-        await endpoint.read("manuSpecificLumi", [0x052c], {manufacturerCode: manufacturerCode}); // Read transition_initial_brightness
         await endpoint.read("manuSpecificLumi", [0x0515], {manufacturerCode: manufacturerCode}); // Read dimming_range_minimum
         await endpoint.read("manuSpecificLumi", [0x0516], {manufacturerCode: manufacturerCode}); // Read dimming_range_maximum
+        await endpoint.read("manuSpecificLumi", [0x0528], {manufacturerCode: manufacturerCode}); // Read transition_curve_curvature
+        await endpoint.read("manuSpecificLumi", [0x052c], {manufacturerCode: manufacturerCode}); // Read transition_initial_brightness
+        await endpoint.read("genLevelCtrl", [0x0012], {}); // off_on_duration
+        await endpoint.read("genLevelCtrl", [0x0013], {}); // on_off_duration
     },
 
     extend: [
-        lumi.lumiModernExtend.lumiLight({
+        lumiModernExtend.lumiLight({
             colorTemp: true,
             color: true,
             colorTempRange: [111, 500],
         }),
 
         m.identify(),
-        lumi.lumiModernExtend.lumiPowerOnBehavior({lookup: {off: 0, on: 1, reverse: 2, restore: 3}}),
+        lumiModernExtend.lumiPowerOnBehavior({lookup: {off: 0, on: 1, reverse: 2, restore: 3}}),
         m.forcePowerSource({powerSource: "Mains (single phase)"}),
-        lumi.lumiModernExtend.lumiZigbeeOTA(),
+        lumiModernExtend.lumiZigbeeOTA(),
 
-        m.numeric({
-            name: "transition_curve_curvature",
-            label: "Transition Curve Curvature",
-            cluster: "manuSpecificLumi",
-            attribute: {ID: 0x0528, type: 0x39},
-            description: "Range: 0.2~6. a=0.2?1: first fast and then slow; a=1: uniform; a=1~6: first slow and then fast (step size 0.01)",
-            entityCategory: "config",
-            zigbeeCommandOptions: {manufacturerCode},
-            valueMin: 0.2,
-            valueMax: 6,
-            valueStep: 0.01,
-        }),
-
-        m.numeric({
-            name: "transition_initial_brightness",
-            label: "Initial Brightness",
-            cluster: "manuSpecificLumi",
-            attribute: {ID: 0x052c, type: 0x20},
-            description: "After turning on the light, the light will brighten from the preset brightness",
-            entityCategory: "config",
-            zigbeeCommandOptions: {manufacturerCode},
-            unit: "%",
-            valueMin: 0,
-            valueMax: 50,
-            valueStep: 1,
-        }),
-
-        m.numeric({
-            name: "off_on_duration",
-            label: "Off to On dimming duration",
-            cluster: "genLevelCtrl",
-            attribute: {ID: 0x0012, type: 0x21},
-            description: "The light will gradually brighten according to the set duration",
-            entityCategory: "config",
-            unit: "s",
-            valueMin: 0,
-            valueMax: 10.5,
-            valueStep: 0.5,
-            scale: 10,
-        }),
-
-        m.numeric({
-            name: "on_off_duration",
-            label: "On to Off dimming duration",
-            cluster: "genLevelCtrl",
-            attribute: {ID: 0x0013, type: 0x21},
-            description: "The light will gradually dim according to the set duration",
-            entityCategory: "config",
-            unit: "s",
-            valueMin: 0,
-            valueMax: 10.5,
-            valueStep: 0.5,
-            scale: 10,
-        }),
-
-        m.numeric({
-            name: "dimming_range_minimum",
-            label: "Dimming Range Minimum",
-            cluster: "manuSpecificLumi",
-            attribute: {ID: 0x0515, type: 0x20},
-            description: "Minimum Allowed Dimming Value",
-            entityCategory: "config",
-            zigbeeCommandOptions: {manufacturerCode},
-            unit: "%",
-            valueMin: 1,
-            valueMax: 100,
-            valueStep: 1,
-        }),
-
-        m.numeric({
-            name: "dimming_range_maximum",
-            label: "Dimming Range Maximum",
-            cluster: "manuSpecificLumi",
-            attribute: {ID: 0x0516, type: 0x20},
-            description: "Maximum Allowed Dimming Value",
-            entityCategory: "config",
-            zigbeeCommandOptions: {manufacturerCode},
-            unit: "%",
-            valueMin: 1,
-            valueMax: 100,
-            valueStep: 1,
-        }),
+        lumiModernExtend.lumiDimmingRangeMin(),
+        lumiModernExtend.lumiDimmingRangeMax(),
+        lumiModernExtend.lumiOnOffDuration(),
+        lumiModernExtend.lumiOffOnDuration(),
+        lumiModernExtend.lumiTransitionCurveCurvature(),
+        lumiModernExtend.lumiTransitionInitialBrightness(),
 
         // RGB Effect Type - T2 specific mappings
         m.enumLookup({
@@ -207,7 +133,6 @@ export default {
             valueMax: 100,
             valueStep: 1,
         }),
-
     ],
 
     meta: {},
@@ -271,31 +196,16 @@ export default {
                     {manufacturerCode, disableDefaultResponse: false},
                 );
 
-                // Update state - ring light turns on when effects are activated
+                // Determine correct state key based on endpoint name
+                const stateKey = meta.endpoint_name ? `state_${meta.endpoint_name}` : "state";
+
                 return {
                     state: {
                         rgb_effect_colors: colors,
                         rgb_effect_brightness: brightnessPercent,
-                        state: "ON",
+                        [stateKey]: "ON",
                     },
                 };
-            },
-        },
-        {
-            key: ["dimming_range_minimum", "dimming_range_maximum"],
-            convertSet: async (entity, key, value, meta) => {
-                // Validate that min doesn't exceed max
-                const newMin = key === "dimming_range_minimum" ? value : meta.state.dimming_range_minimum;
-                const newMax = key === "dimming_range_maximum" ? value : meta.state.dimming_range_maximum;
-
-                if (newMin !== undefined && newMax !== undefined && newMin > newMax) {
-                    throw new Error(`Minimum (${newMin}%) cannot exceed maximum (${newMax}%)`);
-                }
-
-                const attrId = key === "dimming_range_minimum" ? 0x0515 : 0x0516;
-                await entity.write("manuSpecificLumi", {[attrId]: {value, type: 0x20}}, {manufacturerCode});
-
-                return {state: {[key]: value}};
             },
         },
     ],
