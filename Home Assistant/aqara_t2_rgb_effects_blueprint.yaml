@@ -4,7 +4,7 @@
 ## Install to blueprints/script/aqara_t2/aqara_t2_rgb_effects_blueprint.yaml
 
 blueprint:
-  name: Aqara T2 - RGB Dynamic Effects
+  name: Aqara T2 - RGB Dynamic Effect Script
   description: Create RGB dynamic effects for one or more Aqara T2 bulbs
   domain: script
   input:
