@@ -21,7 +21,7 @@ If an external converter is active for a device a cyan icon with "Supported: ext
 ## Home Assistant
 The Home Assistant folder contains a collection of blueprint, scripts, cards and examples.
 
-### aqara_t2_effects_blueprint.yaml
+### aqara_t2_rgb_effects_blueprint.yaml
 Home Assistant script blueprint for custom RGB dynamic effects.
 
 #### 1. Import the Blueprint
