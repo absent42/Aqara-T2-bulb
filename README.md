@@ -51,9 +51,7 @@ Once created, you can run a script in several ways:
 2. **Dashboard Button**: Add a script button to your dashboard
 3. **Automation**: Trigger it from an automation
 
-
-Notes:
-
+## Notes
 
   • This converter mimics the dynamic RGB effect creation and preview feature of the Aqara Home app.
   
