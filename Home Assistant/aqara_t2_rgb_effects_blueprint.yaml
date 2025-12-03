@@ -1,187 +1,207 @@
-## Aqara T2 RGB Dynamic Effects
+## Aqara T2 LED Bulb - RGB Dynamic Effects
 ## Home Assistant script blueprint
 ##
-## Install to blueprints/script/aqara_t2/aqara_t2_rgb_effects_blueprint.yaml
+## Install to blueprints/script/aqara/aqara_t2_rgb_effects_blueprint.yaml
 
 blueprint:
   name: Aqara T2 - RGB Dynamic Effect Script
-  description: Create RGB dynamic effects for one or more Aqara T2 bulbs
+  description: >
+    Script blueprint to send dynamic RGB effect payloads to Aqara T2 LED bulbs via
+    Zigbee2MQTT, using up to 8 RGB color pickers. Supports multiple lights.
   domain: script
   input:
     target_lights:
       name: Target Lights
-      description: Select one or more Aqara T2 bulbs, devices, or areas
+      description: >
+        Select one or more T2 LED bulbs, areas, or devices.
       selector:
         target:
           entity:
-            domain: light
-    
+            - domain: light
+
     z2m_base_topic:
-      name: Zigbee2MQTT Base Topic (Optional)
-      description: Base MQTT topic for Zigbee2MQTT (default is 'zigbee2mqtt')
-      default: zigbee2mqtt
+      name: Zigbee2MQTT Base Topic
+      description: The base MQTT topic for your Zigbee2MQTT instance
+      default: "zigbee2mqtt"
       selector:
         text:
-    
-    effect_type:
-      name: Effect Type
-      description: Select the RGB dynamic effect
-      default: breathing
+
+    rgb_effect:
+      name: RGB Effect
+      description: Select the dynamic effect to use
+      default: "breathing"
       selector:
         select:
           options:
-            - label: "Breathing"
-              value: "breathing"
-            - label: "Candlelight"
-              value: "candlelight"
-            - label: "Fading"
-              value: "fading"
-            - label: "Flash"
-              value: "flash"
-    
+            - "breathing"
+            - "candlelight"
+            - "fading"
+            - "flash"
+            - "off"
+
     number_of_colors:
-      name: Number of Colors
-      description: How many colors to use in the effect (1-8)
+      name: Number of colors
+      description: How many of the color pickers to use (1-8)
       default: 3
       selector:
         number:
           min: 1
           max: 8
-          step: 1
           mode: slider
-    
-    color_1:
+
+    color_01:
       name: Color 1
-      description: First color for the effect
+      description: First effect color
+      default: [214, 235, 255]
+      selector:
+        color_rgb:
+
+    color_02:
+      name: Color 2
+      description: Second effect color
+      default: [92, 86, 255]
+      selector:
+        color_rgb:
+
+    color_03:
+      name: Color 3
+      description: Third effect color
+      default: [93, 0, 255]
+      selector:
+        color_rgb:
+
+    color_04:
+      name: Color 4
+      description: Fourth effect color
       default: [255, 0, 0]
       selector:
         color_rgb:
-    
-    color_2:
-      name: Color 2
-      description: Second color (used if Number of Colors >= 2)
+
+    color_05:
+      name: Color 5
+      description: Fifth effect color
       default: [0, 255, 0]
       selector:
         color_rgb:
-    
-    color_3:
-      name: Color 3
-      description: Third color (used if Number of Colors >= 3)
-      default: [0, 0, 255]
-      selector:
-        color_rgb:
-    
-    color_4:
-      name: Color 4
-      description: Fourth color (used if Number of Colors >= 4)
-      default: [255, 255, 0]
-      selector:
-        color_rgb:
-    
-    color_5:
-      name: Color 5
-      description: Fifth color (used if Number of Colors >= 5)
-      default: [255, 0, 255]
-      selector:
-        color_rgb:
-    
-    color_6:
+
+    color_06:
       name: Color 6
-      description: Sixth color (used if Number of Colors >= 6)
+      description: Sixth effect color
       default: [0, 255, 255]
       selector:
         color_rgb:
-    
-    color_7:
+
+    color_07:
       name: Color 7
-      description: Seventh color (used if Number of Colors >= 7)
-      default: [255, 128, 0]
+      description: Seventh effect color
+      default: [255, 255, 0]
       selector:
         color_rgb:
-    
-    color_8:
+
+    color_08:
       name: Color 8
-      description: Eighth color (used if Number of Colors = 8)
-      default: [128, 0, 255]
+      description: Eighth effect color
+      default: [255, 0, 255]
       selector:
         color_rgb:
-    
-    effect_brightness:
+
+    rgb_effect_brightness:
       name: Effect Brightness
-      description: Brightness level for the effect
+      description: Brightness (1-100)
       default: 100
       selector:
         number:
           min: 1
           max: 100
-          step: 1
-          unit_of_measurement: "%"
-    
-    effect_speed:
+          mode: slider
+
+    rgb_effect_speed:
       name: Effect Speed
-      description: Speed of the effect animation
-      default: 50
+      description: Speed (1-100)
+      default: 75
       selector:
         number:
           min: 1
           max: 100
-          step: 1
-          unit_of_measurement: "%"
-
-mode: restart
+          mode: slider
 
 sequence:
   - variables:
-      target_lights: !input target_lights
       z2m_base_topic: !input z2m_base_topic
+      rgb_effect: !input rgb_effect
       number_of_colors: !input number_of_colors
-      color_1: !input color_1
-      color_2: !input color_2
-      color_3: !input color_3
-      color_4: !input color_4
-      color_5: !input color_5
-      color_6: !input color_6
-      color_7: !input color_7
-      color_8: !input color_8
-      rgb_effect: !input effect_type
-      rgb_effect_brightness: !input effect_brightness
-      rgb_effect_speed: !input effect_speed
-      # Set hex colors
-      hex_colors: >-
-        {%- set all_colors = [
-          color_1, color_2, color_3, color_4,
-          color_5, color_6, color_7, color_8
-        ] -%}
-        {%- set colors = all_colors[:(number_of_colors | int)] -%}
-        {%- set hexcolors = namespace(value=[]) -%}
-        {%- for c in colors -%}
-          {%- if c is not none -%}
-            {%- set hex = '#%02x%02x%02x' % (c[0], c[1], c[2]) -%}
-            {%- set hexcolors.value = hexcolors.value + [hex] -%}
-          {%- endif -%}
-        {%- endfor -%}
-        {{ hexcolors.value | join(',') }}
-      # Expand target to get all light entities
-      target_entities: >-
-        {%- if target_lights.entity_id is defined -%}
-          {{ target_lights.entity_id if target_lights.entity_id is iterable and target_lights.entity_id is not string else [target_lights.entity_id] }}
-        {%- elif target_lights.area_id is defined or target_lights.device_id is defined -%}
-          {{ expand(target_lights) | selectattr('domain', 'eq', 'light') | map(attribute='entity_id') | list }}
-        {%- else -%}
-          []
-        {%- endif -%}
+      color_01: !input color_01
+      color_02: !input color_02
+      color_03: !input color_03
+      color_04: !input color_04
+      color_05: !input color_05
+      color_06: !input color_06
+      color_07: !input color_07
+      color_08: !input color_08
+      rgb_effect_brightness: !input rgb_effect_brightness
+      rgb_effect_speed: !input rgb_effect_speed
+      target_lights: !input target_lights
+
+  - variables:
+      # Build hex colors list
+      all_colors: >
+        {{ [color_01, color_02, color_03, color_04, color_05, color_06, color_07, color_08] }}
+      
+      selected_colors: >
+        {{ all_colors[:number_of_colors | int] }}
+      
+      hex_colors: >
+        {% set ns = namespace(colors=[]) %}
+        {% for c in selected_colors %}
+          {% if c is not none %}
+            {% set hex = '#%02x%02x%02x' % (c[0], c[1], c[2]) %}
+            {% set ns.colors = ns.colors + [hex] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.colors | join(',') }}
 
   - repeat:
-      for_each: "{{ target_entities }}"
+      for_each: >
+        {% set ns = namespace(lights=[]) %}
+        {% if target_lights.entity_id is defined %}
+          {% if target_lights.entity_id is string %}
+            {% set ns.lights = [target_lights.entity_id] %}
+          {% else %}
+            {% set ns.lights = target_lights.entity_id %}
+          {% endif %}
+        {% endif %}
+        {% if target_lights.device_id is defined %}
+          {% if target_lights.device_id is string %}
+            {% set device_entities = device_entities(target_lights.device_id) | select('match', '^light\.') | list %}
+            {% set ns.lights = ns.lights + device_entities %}
+          {% else %}
+            {% for device_id in target_lights.device_id %}
+              {% set device_entities = device_entities(device_id) | select('match', '^light\.') | list %}
+              {% set ns.lights = ns.lights + device_entities %}
+            {% endfor %}
+          {% endif %}
+        {% endif %}
+        {% if target_lights.area_id is defined %}
+          {% if target_lights.area_id is string %}
+            {% set area_entities = area_entities(target_lights.area_id) | select('match', '^light\.') | list %}
+            {% set ns.lights = ns.lights + area_entities %}
+          {% else %}
+            {% for area_id in target_lights.area_id %}
+              {% set area_entities = area_entities(area_id) | select('match', '^light\.') | list %}
+              {% set ns.lights = ns.lights + area_entities %}
+            {% endfor %}
+          {% endif %}
+        {% endif %}
+        {{ ns.lights | unique | list }}
       sequence:
         - variables:
-            # Get Z2M device name from entity's device name
-            current_entity: "{{ repeat.item }}"
-            entity_device_id: "{{ device_id(current_entity) }}"
+            entity_device_id: "{{ device_id(repeat.item) }}"
             z2m_device_name: "{{ device_attr(entity_device_id, 'name') }}"
         
-        - alias: "Send to Z2M"
+        - alias: "Set T2 effect with colors (correct parameter order)"
           service: mqtt.publish
           data:
             topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/set"
             payload: '{"rgb_effect":"{{ rgb_effect }}","rgb_effect_speed":{{ rgb_effect_speed }},"rgb_effect_colors":"{{ hex_colors }}","rgb_effect_brightness":{{ rgb_effect_brightness }}}'
+
+mode: single
