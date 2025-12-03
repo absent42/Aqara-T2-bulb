@@ -1,0 +1,67 @@
+## Aqara T2 LED Bulb - RGB Dynamic Effects
+## Home Assistant script examples
+##
+## These call the blueprint with 4 preset effects
+##
+## Installation
+## 1. Install the blueprint aqara_t2_rgb_effects_blueprint.yaml
+## 2. Replace light.your_t2_bulb with your actual light entity ID
+## 3. Add these scripts to your scripts.yaml
+
+t2_effect_candlelight:
+  alias: T2 Effect - Candlelight
+  use_blueprint:
+    path: aqara/aqara_t2_rgb_effects_blueprint.yaml
+    input:
+      target_lights:
+        entity_id: light.your_t2_bulb
+      rgb_effect: candlelight
+      number_of_colors: 1
+      color_01: [255, 125, 18]
+      rgb_effect_brightness: 100
+      rgb_effect_speed: 50
+
+t2_effect_breath:
+  alias: T2 Effect - Breath
+  use_blueprint:
+    path: aqara/aqara_t2_rgb_effects_blueprint.yaml
+    input:
+      target_lights:
+        entity_id: light.your_t2_bulb
+      rgb_effect: breathing
+      number_of_colors: 1
+      color_01: [255, 125, 18]
+      rgb_effect_brightness: 100
+      rgb_effect_speed: 50
+
+t2_effect_colorful:
+  alias: T2 Effect - Colorful
+  use_blueprint:
+    path: aqara/aqara_t2_rgb_effects_blueprint.yaml
+    input:
+      target_lights:
+        entity_id: light.your_t2_bulb
+      rgb_effect: fading
+      number_of_colors: 7
+      color_01: [92, 87, 255]
+      color_02: [0, 187, 255]
+      color_03: [51, 255, 153]
+      color_04: [204, 255, 51]
+      color_05: [255, 102, 204]
+      color_06: [255, 51, 51]
+      color_07: [170, 0, 255]
+      rgb_effect_brightness: 100
+      rgb_effect_speed: 50
+
+t2_effect_security:
+  alias: T2 Effect - Security
+  use_blueprint:
+    path: aqara/aqara_t2_rgb_effects_blueprint.yaml
+    input:
+      target_lights:
+        entity_id: light.your_t2_bulb
+      rgb_effect: flash
+      number_of_colors: 1
+      color_01: [255, 0, 0]
+      rgb_effect_brightness: 100
+      rgb_effect_speed: 100
