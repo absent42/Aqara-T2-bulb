@@ -69,9 +69,8 @@ Simple dashboard buttons card example for activating RGB dynamic effects scripts
 
 ### Stopping Effects
 Click the **Stop Effects** button to turn off the dynamic effect, or  
-Click any static preset button, or  
-Adjust ring light settings manually or with automation, or  
-Turn the light off/on
+Click any static preset button, or
+Adjust light settings manually or with automation 
 
 ### Finding Your Light Entity ID
 **Settings** → **Entities**  
