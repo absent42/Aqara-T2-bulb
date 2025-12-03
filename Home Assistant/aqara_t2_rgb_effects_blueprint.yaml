@@ -13,7 +13,7 @@ blueprint:
     target_lights:
       name: Target Lights
       description: >
-        Select one or more T2 LED bulbs, areas, or devices.
+        Select one or more T2 LED bulb entities or devices.
       selector:
         target:
           entity:
