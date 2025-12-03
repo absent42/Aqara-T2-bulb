@@ -51,6 +51,33 @@ Once created, you can run a script in several ways:
 2. **Dashboard Button**: Add a script button to your dashboard
 3. **Automation**: Trigger it from an automation
 
+### aqara_t2_rgb_effects_script_examples.yaml
+
+These call the blueprint with 4 examples based on the presets in the Aqara Home app: Candlelight, Breath, Colorful, Security.
+
+1. Replace light.your_t1m_light with your bulb's actual RGB entity ID
+2. Add the scripts code to your scripts.yaml
+
+### aqara_t2_rgb_effects_card.yaml
+
+Simple dashboard buttons card example for activating RGB dynamic effects scripts. Requires aqara_t2_rgb_effects_script_examples.yaml and aqara_t2_rgb_effects_blueprint.yaml
+
+1. Edit your Home Assistant dashboard
+2. Click **Add Card** >> **Manual**
+3. Copy and paste in the YAML code
+4. For the "Stop" button, replace light.your_t1m_light with your bulb's actual RGB entity ID
+
+### Stopping Effects
+Click the **Stop Effects** button to turn off the dynamic effect, or  
+Click any static preset button, or  
+Adjust ring light settings manually or with automation, or  
+Turn the light off/on
+
+### Finding Your Light Entity ID
+**Settings** → **Entities**  
+Find your T2 bulb
+Note the RGB entity ID (e.g., light.living_room_lamp)
+
 ## Notes
 
   • This converter mimics the dynamic RGB effect creation and preview feature of the Aqara Home app.
