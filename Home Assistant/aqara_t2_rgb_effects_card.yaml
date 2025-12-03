@@ -1,0 +1,67 @@
+## Aqara T2 LED Bulb - RGB Dynamic Effects
+## Home Assistant card example
+##
+## These buttons activate preset RGB dynamic effect scenes
+##
+## Installation
+## 1. Install the blueprint aqara_t2_rgb_effects_blueprint.yaml
+## 2. Replace light.your_t2_bulb with your actual light entity ID
+## 3. Add the effect scripts from aqara_t2_rgb_effects_script_examples.yaml to your scripts.yaml
+## 4. Edit your Home Assistant dashboard
+## 5. Click **Add Card** >> **Manual**
+## 6. Copy the YAML from below
+
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      ## T2 RGB Dynamic Effects
+      
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: button
+        name: Candlelight
+        icon: mdi:candle
+        tap_action:
+          action: call-service
+          service: script.turn_on
+          target:
+            entity_id: script.t2_effect_candlelight
+        
+      - type: button
+        name: Breath
+        icon: mdi:lungs
+        tap_action:
+          action: call-service
+          service: script.turn_on
+          target:
+            entity_id: script.t2_effect_breath
+        
+      - type: button
+        name: Colorful
+        icon: mdi:palette
+        tap_action:
+          action: call-service
+          service: script.turn_on
+          target:
+            entity_id: script.t2_effect_colorful
+
+      - type: button
+        name: Security
+        icon: mdi:shield-alert
+        tap_action:
+          action: call-service
+          service: script.turn_on
+          target:
+            entity_id: script.t2_effect_security
+
+  - type: button
+    name: Stop Effects
+    icon: mdi:stop
+    tap_action:
+      action: call-service
+      service: light.turn_off
+      target:
+        entity_id: light.your_t2_bulb
