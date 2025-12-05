@@ -62,6 +62,19 @@ function encodeColor(hexColor) {
     ];
 }
 
+function getStateKey(meta) {
+    // Check if device has multiple endpoints
+    const rgbEndpoint = meta.device.getEndpoint(2);
+    if (rgbEndpoint) {
+        const endpoints = meta.device.endpoints;
+        if (endpoints && endpoints.length > 1) {
+            // Multi-endpoint device, use state_rgb
+            return "state_rgb";
+        }
+    }
+    return "state";
+}
+
 export default {
     zigbeeModel: ["lumi.light.agl003", "lumi.light.agl005", "lumi.light.agl006", "lumi.light.agl001", "lumi.light.agl002"],
     model: "T2_E27",
@@ -173,8 +186,8 @@ export default {
                     throw new Error("Brightness must be between 1 and 100%");
                 }
 
-                // Convert brightness percentage to 8-bit value (0-254)
-                const brightness8bit = Math.round((brightnessPercent / 100) * 254);
+                // Convert brightness percentage to 8-bit value (0-255)
+                const brightness8bit = Math.round((brightnessPercent / 100) * 255);
 
                 // Encode all colors for the color message
                 const colorBytes = [];
@@ -196,8 +209,8 @@ export default {
                     {manufacturerCode, disableDefaultResponse: false},
                 );
 
-                // Determine correct state key based on endpoint name
-                const stateKey = meta.endpoint_name ? `state_${meta.endpoint_name}` : "state";
+                // Determine correct state key based on device endpoint configuration
+                const stateKey = getStateKey(meta);
 
                 return {
                     state: {
