@@ -6,7 +6,7 @@ Dynamic RGB Effects have the following properties:
 1. Effect Type: Breathing, Candlelight, Fading, Flash. 
 2. Brightness: 1% - 100%
 3. Speed: 1% - 100%
-4. Colours: Between 1 and 8 colours can be set for each effect, the bulb cycles through the colours in order. The colour slots are defined by a comma seperated list of RGB hex values, e.g. #ff0000,#00ff00,#0000ff for a red, green, blue cycle.
+4. Colours: Between 1 and 8 colours can be set for each effect, the bulb cycles through the colours in order.
 
 ## Installation
 
