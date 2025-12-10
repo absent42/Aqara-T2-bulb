@@ -7,6 +7,7 @@
 ## 1. Install the blueprint aqara_t2_rgb_effects_blueprint.yaml
 ## 2. Replace light.your_t2_bulb with your actual light entity ID
 ## 3. Add these scripts to your scripts.yaml
+## 4. Set light brightness using the standard light controls before running effects
 
 t2_effect_candlelight:
   alias: T2 Effect - Candlelight
@@ -15,11 +16,10 @@ t2_effect_candlelight:
     input:
       target_lights:
         entity_id: light.your_t2_bulb
-      rgb_effect: candlelight
+      effect: candlelight
       number_of_colors: 1
       color_01: [255, 125, 18]
-      rgb_effect_brightness: 100
-      rgb_effect_speed: 50
+      effect_speed: 50
 
 t2_effect_breath:
   alias: T2 Effect - Breath
@@ -28,11 +28,10 @@ t2_effect_breath:
     input:
       target_lights:
         entity_id: light.your_t2_bulb
-      rgb_effect: breathing
+      effect: breathing
       number_of_colors: 1
       color_01: [255, 125, 18]
-      rgb_effect_brightness: 100
-      rgb_effect_speed: 50
+      effect_speed: 50
 
 t2_effect_colorful:
   alias: T2 Effect - Colorful
@@ -41,7 +40,7 @@ t2_effect_colorful:
     input:
       target_lights:
         entity_id: light.your_t2_bulb
-      rgb_effect: fading
+      effect: fading
       number_of_colors: 7
       color_01: [92, 87, 255]
       color_02: [0, 187, 255]
@@ -50,8 +49,7 @@ t2_effect_colorful:
       color_05: [255, 102, 204]
       color_06: [255, 51, 51]
       color_07: [170, 0, 255]
-      rgb_effect_brightness: 100
-      rgb_effect_speed: 50
+      effect_speed: 50
 
 t2_effect_security:
   alias: T2 Effect - Security
@@ -60,8 +58,7 @@ t2_effect_security:
     input:
       target_lights:
         entity_id: light.your_t2_bulb
-      rgb_effect: flash
+      effect: flash
       number_of_colors: 1
       color_01: [255, 0, 0]
-      rgb_effect_brightness: 100
-      rgb_effect_speed: 100
+      effect_speed: 100
