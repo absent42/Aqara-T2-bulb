@@ -8,7 +8,9 @@ blueprint:
   description: >
     Script blueprint to send dynamic RGB effect payloads to Aqara T2 LED bulbs via
     Zigbee2MQTT, using up to 8 RGB color pickers. Supports multiple lights.
+    Effect brightness is controlled by the light's global brightness setting.
   domain: script
+  source_url: https://github.com/absent42/Aqara-T2-bulb/blob/main/Home%20Assistant/aqara_t2_rgb_effects_blueprint.yaml
   input:
     target_lights:
       name: Target Lights
@@ -26,8 +28,8 @@ blueprint:
       selector:
         text:
 
-    rgb_effect:
-      name: RGB Effect
+    effect:
+      name: Effect
       description: Select the dynamic effect to use
       default: "breathing"
       selector:
@@ -105,18 +107,7 @@ blueprint:
       selector:
         color_rgb:
 
-    rgb_effect_brightness:
-      name: Effect Brightness
-      description: Brightness of the RGB dynamic effect (1-100%)
-      default: 100
-      selector:
-        number:
-          min: 1
-          max: 100
-          unit_of_measurement: "%"
-          mode: slider
-
-    rgb_effect_speed:
+    effect_speed:
       name: Effect Speed
       description: Speed of the RGB dynamic effect (1-100%)
       default: 50
@@ -131,10 +122,9 @@ sequence:
   - variables:
       z2m_base_topic: !input z2m_base_topic
       target_lights: !input target_lights
-      rgb_effect: !input rgb_effect
+      effect: !input effect
       number_of_colors: !input number_of_colors
-      rgb_effect_brightness: !input rgb_effect_brightness
-      rgb_effect_speed: !input rgb_effect_speed
+      effect_speed: !input effect_speed
       color_01: !input color_01
       color_02: !input color_02
       color_03: !input color_03
@@ -196,10 +186,10 @@ sequence:
             entity_device_id: "{{ device_id(repeat.item) }}"
             z2m_device_name: "{{ device_attr(entity_device_id, 'name') }}"
         
-        - alias: "Set T2 RGB effect (correct parameter order)"
+        - alias: "Set T2 RGB effect"
           service: mqtt.publish
           data:
             topic: "{{ z2m_base_topic }}/{{ z2m_device_name }}/set"
-            payload: '{"rgb_effect":"{{ rgb_effect }}","rgb_effect_speed":{{ rgb_effect_speed }},"rgb_effect_colors":{{ color_array }},"rgb_effect_brightness":{{ rgb_effect_brightness }}}'
+            payload: '{"effect":"{{ effect }}","effect_speed":{{ effect_speed }},"effect_colors":{{ color_array }}}'
 
 mode: single
