@@ -60,7 +60,7 @@ function encodeColor(color) {
 }
 
 export default {
-    zigbeeModel: [, "lumi.light.agl001", "lumi.light.agl003", "lumi.light.agl005", "lumi.light.agl007"],
+    zigbeeModel: ["lumi.light.agl001", "lumi.light.agl003", "lumi.light.agl005", "lumi.light.agl007"],
     model: "T2_E27",
     vendor: "Aqara",
     description: "E27 led bulb",
