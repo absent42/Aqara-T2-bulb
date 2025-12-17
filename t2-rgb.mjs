@@ -60,7 +60,7 @@ function encodeColor(color) {
 }
 
 export default {
-    zigbeeModel: ["lumi.light.agl003", "lumi.light.agl005", "lumi.light.agl006", "lumi.light.agl001", "lumi.light.agl002"],
+    zigbeeModel: [, "lumi.light.agl001", "lumi.light.agl003", "lumi.light.agl005", "lumi.light.agl007"],
     model: "T2_E27",
     vendor: "Aqara",
     description: "E27 led bulb",
@@ -69,13 +69,13 @@ export default {
             model: "T2_GU10",
             vendor: "Aqara",
             description: "GU10 led bulb",
-            fingerprint: [{modelID: "lumi.light.agl005"}, {modelID: "lumi.light.agl006"}],
+            fingerprint: [{modelID: "lumi.light.agl005"}, {modelID: "lumi.light.agl007"}],
         },
         {
             model: "T2_E26",
             vendor: "Aqara",
             description: "E26 led bulb",
-            fingerprint: [{modelID: "lumi.light.agl001"}, {modelID: "lumi.light.agl002"}],
+            fingerprint: [{modelID: "lumi.light.agl001"}],
         },
     ],
 
