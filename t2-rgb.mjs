@@ -59,6 +59,62 @@ function encodeColor(color) {
     ];
 }
 
+// ============================================================================
+// MODERN EXTEND: EFFECT COLORS
+// ============================================================================
+
+function lumiEffectColors() {
+    return {
+        isModernExtend: true,
+        toZigbee: [
+            {
+                key: ["effect_colors"],
+                convertSet: async (entity, key, value, meta) => {
+                    const colors = value || meta.state.effect_colors || [{r: 255, g: 0, b: 0}, {r: 0, g: 255, b: 0}, {r: 0, g: 0, b: 255}];
+
+                    if (!Array.isArray(colors) || colors.length < 1 || colors.length > 8) {
+                        throw new Error("Must provide array of 1-8 RGB color objects");
+                    }
+
+                    const colorBytes = [];
+                    for (const color of colors) {
+                        const encoded = encodeColor(color);
+                        colorBytes.push(...encoded);
+                    }
+
+                    const packet = Buffer.from([0x00, colors.length, ...colorBytes]);
+                    const targetEndpoint = meta.device.getEndpoint(1);
+
+                    await targetEndpoint.write(
+                        "manuSpecificLumi",
+                        {1315: {value: packet, type: 0x41}},
+                        {manufacturerCode, disableDefaultResponse: false},
+                    );
+
+                    return {
+                        state: {
+                            effect_colors: colors,
+                        },
+                    };
+                },
+            },
+        ],
+        exposes: [
+            exposes
+                .list("effect_colors", ea.SET, exposes.composite("color", "color", ea.SET)
+                    .withFeature(exposes.numeric("r", ea.SET).withValueMin(0).withValueMax(255).withDescription("Red (0-255)"))
+                    .withFeature(exposes.numeric("g", ea.SET).withValueMin(0).withValueMax(255).withDescription("Green (0-255)"))
+                    .withFeature(exposes.numeric("b", ea.SET).withValueMin(0).withValueMax(255).withDescription("Blue (0-255)")))
+                .withDescription("Array of RGB color objects for dynamic effects (1-8 colors).")
+                .withLengthMin(1)
+                .withLengthMax(8)
+                .withCategory("config"),
+        ],
+        fromZigbee: [],
+        meta: {},
+    };
+}
+
 export default {
     zigbeeModel: ["lumi.light.agl001", "lumi.light.agl003", "lumi.light.agl005", "lumi.light.agl007"],
     model: "T2_E27",
@@ -128,57 +184,7 @@ export default {
             valueMax: 100,
             valueStep: 1,
         }),
-    ],
 
-    meta: {},
-
-    exposes: [
-        exposes
-            .list("effect_colors", ea.SET, exposes.composite("color", "color", ea.SET)
-                .withFeature(exposes.numeric("r", ea.SET).withValueMin(0).withValueMax(255).withDescription("Red (0-255)"))
-                .withFeature(exposes.numeric("g", ea.SET).withValueMin(0).withValueMax(255).withDescription("Green (0-255)"))
-                .withFeature(exposes.numeric("b", ea.SET).withValueMin(0).withValueMax(255).withDescription("Blue (0-255)")))
-            .withDescription("Array of RGB color objects for dynamic effects (1-8 colors). Uses global brightness.")
-            .withLengthMin(1)
-            .withLengthMax(8)
-            .withCategory("config"),
-    ],
-
-    toZigbee: [
-        {
-            key: ["effect_colors"],
-            convertSet: async (entity, key, value, meta) => {
-                const colors = value || meta.state.effect_colors || [{r: 255, g: 0, b: 0}, {r: 0, g: 255, b: 0}, {r: 0, g: 0, b: 255}];
-
-                if (!Array.isArray(colors) || colors.length < 1 || colors.length > 8) {
-                    throw new Error("Must provide array of 1-8 RGB color objects");
-                }
-
-                const colorBytes = [];
-                for (const color of colors) {
-                    const encoded = encodeColor(color);
-                    colorBytes.push(...encoded);
-                }
-
-                const packet = Buffer.from([0x00, colors.length, ...colorBytes]);
-                const ATTR_EFFECT_COLORS = 1315;
-
-                const model = meta.device.modelID;
-                const deviceType = model === "lumi.light.acn132" ? "strip" : (model.startsWith("lumi.light.agl") ? "t2" : "t1m");
-                const targetEndpoint = deviceType === "t1m" ? meta.device.getEndpoint(1) : entity;
-
-                await targetEndpoint.write(
-                    "manuSpecificLumi",
-                    {[ATTR_EFFECT_COLORS]: {value: packet, type: 0x41}},
-                    {manufacturerCode, disableDefaultResponse: false},
-                );
-
-                return {
-                    state: {
-                        effect_colors: colors,
-                    },
-                };
-            },
-        },
+        lumiEffectColors(),
     ],
 };
