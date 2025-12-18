@@ -60,6 +60,35 @@ function encodeColor(color) {
 }
 
 // ============================================================================
+// SHARED MODERN EXTENDS (identical across T1M, T1 Strip, T2)
+// ============================================================================
+
+function lumiEffect(lookup) {
+    return m.enumLookup({
+        name: "effect",
+        lookup: lookup,
+        cluster: "manuSpecificLumi",
+        attribute: {ID: 0x051f, type: 0x23},
+        description: "RGB dynamic effect type",
+        zigbeeCommandOptions: {manufacturerCode},
+    });
+}
+
+function lumiEffectSpeed() {
+    return m.numeric({
+        name: "effect_speed",
+        cluster: "manuSpecificLumi",
+        attribute: {ID: 0x0520, type: 0x20},
+        description: "RGB dynamic effect speed (1-100%)",
+        zigbeeCommandOptions: {manufacturerCode},
+        unit: "%",
+        valueMin: 1,
+        valueMax: 100,
+        valueStep: 1,
+    });
+}
+
+// ============================================================================
 // MODERN EXTEND: EFFECT COLORS
 // ============================================================================
 
@@ -164,27 +193,8 @@ export default {
         lumiModernExtend.lumiTransitionCurveCurvature(),
         lumiModernExtend.lumiTransitionInitialBrightness(),
 
-        m.enumLookup({
-            name: "effect",
-            lookup: {off: 0, breathing: 1, candlelight: 2, fading: 3, flash: 4},
-            cluster: "manuSpecificLumi",
-            attribute: {ID: 0x051f, type: 0x23},
-            description: "RGB dynamic effect type for LED bulb",
-            zigbeeCommandOptions: {manufacturerCode},
-        }),
-
-        m.numeric({
-            name: "effect_speed",
-            cluster: "manuSpecificLumi",
-            attribute: {ID: 0x0520, type: 0x20},
-            description: "RGB dynamic effect speed (1-100%)",
-            zigbeeCommandOptions: {manufacturerCode},
-            unit: "%",
-            valueMin: 1,
-            valueMax: 100,
-            valueStep: 1,
-        }),
-
+        lumiEffect({off: 0, breathing: 1, candlelight: 2, fading: 3, flash: 4}),
+        lumiEffectSpeed(),
         lumiEffectColors(),
     ],
 };
