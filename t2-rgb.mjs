@@ -172,6 +172,9 @@ export default {
         const endpoint = device.getEndpoint(1);
         await endpoint.read("manuSpecificLumi", [0x0515], {manufacturerCode: manufacturerCode});
         await endpoint.read("manuSpecificLumi", [0x0516], {manufacturerCode: manufacturerCode});
+        await endpoint.read("manuSpecificLumi", [0x051f], {manufacturerCode: manufacturerCode});
+        await endpoint.read("manuSpecificLumi", [0x0520], {manufacturerCode: manufacturerCode});
+        await endpoint.read("manuSpecificLumi", [0x0523], {manufacturerCode: manufacturerCode});
         await endpoint.read("manuSpecificLumi", [0x0528], {manufacturerCode: manufacturerCode});
         await endpoint.read("manuSpecificLumi", [0x052c], {manufacturerCode: manufacturerCode});
         await endpoint.read("genLevelCtrl", [0x0012], {});
