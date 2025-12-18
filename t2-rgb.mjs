@@ -6,7 +6,7 @@ const {lumiModernExtend, manufacturerCode} = lumi;
 const ea = exposes.access;
 
 // ============================================================================
-// SHARED COLOR CONVERSION FUNCTIONS (identical across T1M, T1 Strip, T2)
+// SHARED COLOR CONVERSION FUNCTIONS (identical across T1 Strip, T2)
 // ============================================================================
 
 function rgbToXY(r, g, b) {
