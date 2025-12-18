@@ -60,7 +60,7 @@ function encodeColor(color) {
 }
 
 // ============================================================================
-// SHARED MODERN EXTENDS (identical across T1M, T1 Strip, T2)
+// SHARED MODERN EXTENDS (identical across T1 Strip, T2)
 // ============================================================================
 
 function lumiEffect(lookup) {
@@ -73,6 +73,10 @@ function lumiEffect(lookup) {
         zigbeeCommandOptions: {manufacturerCode},
     });
 }
+
+// ============================================================================
+// SHARED MODERN EXTENDS (identical across T1M, T1 Strip, T2)
+// ============================================================================
 
 function lumiEffectSpeed() {
     return m.numeric({
