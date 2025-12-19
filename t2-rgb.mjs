@@ -6,10 +6,10 @@ const {lumiModernExtend, manufacturerCode} = lumi;
 const ea = exposes.access;
 
 // ============================================================================
-// SHARED COLOR CONVERSION FUNCTIONS (identical across T1 Strip, T2)
+// SHARED COLOR CONVERSION FUNCTIONS (identical across T1M, T1 Strip, T2)
 // ============================================================================
 
-function rgbToXY(r, g, b) {
+function lumiRgbToXY(r, g, b) {
     let red = r / 255.0;
     let green = g / 255.0;
     let blue = b / 255.0;
@@ -33,7 +33,7 @@ function rgbToXY(r, g, b) {
     };
 }
 
-function encodeColor(color) {
+function lumiEncodeRgbColor(color) {
     if (typeof color !== 'object' || color.r === undefined || color.g === undefined || color.b === undefined) {
         throw new Error(`Invalid color format. Expected {r: 0-255, g: 0-255, b: 0-255}, got: ${JSON.stringify(color)}`);
     }
@@ -46,7 +46,7 @@ function encodeColor(color) {
         throw new Error(`RGB values must be between 0-255. Got r:${r}, g:${g}, b:${b}`);
     }
 
-    const xy = rgbToXY(r, g, b);
+    const xy = lumiRgbToXY(r, g, b);
 
     const xScaled = Math.round(xy.x * 65535);
     const yScaled = Math.round(xy.y * 65535);
@@ -60,7 +60,7 @@ function encodeColor(color) {
 }
 
 // ============================================================================
-// SHARED MODERN EXTENDS (identical across T1 Strip, T2)
+// SHARED MODERN EXTENDS (identical across T1M, T1 Strip, T2)
 // ============================================================================
 
 function lumiEffect(lookup) {
@@ -73,10 +73,6 @@ function lumiEffect(lookup) {
         zigbeeCommandOptions: {manufacturerCode},
     });
 }
-
-// ============================================================================
-// SHARED MODERN EXTENDS (identical across T1M, T1 Strip, T2)
-// ============================================================================
 
 function lumiEffectSpeed() {
     return m.numeric({
@@ -111,7 +107,7 @@ function lumiEffectColors() {
 
                     const colorBytes = [];
                     for (const color of colors) {
-                        const encoded = encodeColor(color);
+                        const encoded = lumiEncodeRgbColor(color);
                         colorBytes.push(...encoded);
                     }
 
@@ -143,8 +139,6 @@ function lumiEffectColors() {
                 .withLengthMax(8)
                 .withCategory("config"),
         ],
-        fromZigbee: [],
-        meta: {},
     };
 }
 
