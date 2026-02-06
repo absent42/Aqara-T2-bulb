@@ -23,8 +23,6 @@ If an external converter is active for a device a cyan icon with "Supported: ext
 
 **Use the Aqara Advanced Lighting Home Assistant integration to make custom effects, trigger effects, and utilise them in automations - https://github.com/absent42/Aqara-Advanced-Lighting**
 
-The Home Assistant folder contains a collection of blueprints, scripts, cards and examples.
-
 ### aqara_t2_rgb_effects_blueprint.yaml
 Home Assistant script blueprint for custom RGB dynamic effects.
 
